@@ -1,0 +1,9 @@
+name: inferable
+channels:
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.11.*
+  - pip
+  - pytorch::pytorch=2.2.1
+  - pytorch::pytorch-cuda=12.1
