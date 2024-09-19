@@ -214,29 +214,28 @@ class PaliGemmaModel(BaseModel):
         #for id, label in zip(x['input_ids'][0][-30:], x['labels'][0][-30:]):
         #    print(self.processor.decode([id.item()]), self.processor.decode([label.item()]))
 
+        bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_type=torch.bfloat16
+            ) if self.finetuning_quantized else None
+        model = PaliGemmaForConditionalGeneration.from_pretrained(self.model_name, quantization_config=bnb_config, device_map="auto")
 
-        if self.finetuning_lora == False and self.finetuning_quantized == False:
-            model = PaliGemmaForConditionalGeneration.from_pretrained(self.model_name)
+        if self.finetuning_lora:
+            lora_config = LoraConfig(
+                r=8,
+                target_modules=["q_proj", "o_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj"],
+                task_type="CAUSAL_LM",
+            )
+            model = get_peft_model(model, lora_config)
+            model.print_trainable_parameters()
+        else:
             for param in model.vision_tower.parameters():
                 param.requires_grad = False
 
             for param in model.multi_modal_projector.parameters():
                 param.requires_grad = False
-        else:
-            bnb_config = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_quant_type="nf4",
-                    bnb_4bit_compute_type=torch.bfloat16
-                ) if self.finetuning_quantized else None
-            model = PaliGemmaForConditionalGeneration.from_pretrained(self.model_name, quantization_config=bnb_config, device_map="auto")
-            if self.finetuning_lora:
-                lora_config = LoraConfig(
-                    r=8,
-                    target_modules=["q_proj", "o_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj"],
-                    task_type="CAUSAL_LM",
-                )
-                model = get_peft_model(model, lora_config)
-                model.print_trainable_parameters()
+
         # model is created
 
         pl_model = PalliGemmaPLModule(self.processor, model, self.learning_rate, self.max_length)
