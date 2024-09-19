@@ -1,0 +1,6 @@
+transformers==4.42.4
+datasets==2.20.0
+scikit-learn==1.5.1
+notebook
+openpyxl
+ipywidgets
