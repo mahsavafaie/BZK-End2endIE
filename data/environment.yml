@@ -1,4 +1,0 @@
-name: inferable-data
-dependencies:
-  - python=3.11.*
-  - pip
